@@ -7,8 +7,16 @@ API REST em FastAPI com MongoDB. Os dados dos Pokemon sao populados a partir da 
 ```bash
 cd pokedex_be
 python -m venv .venv
+# Windows PowerShell
+.venv\Scripts\Activate.ps1
+# Windows CMD
+.venv\Scripts\activate
+# Linux/macOS
 source .venv/bin/activate
 pip install -r requirements.txt
+# Windows
+copy .env.example .env
+# Linux/macOS
 cp .env.example .env
 uvicorn app.main:app --reload
 ```
