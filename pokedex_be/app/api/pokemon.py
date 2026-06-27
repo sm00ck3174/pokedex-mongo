@@ -13,11 +13,15 @@ router = APIRouter(prefix="/pokemon", tags=["pokemon"])
 async def find_all_pokemon(
     search: str | None = Query(default=None, min_length=1),
     type: str | None = Query(default=None, min_length=1),
+    sort_by: str | None = Query(default="number"),
+    order: str | None = Query(default="asc"),
     limit: int = Query(default=151, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: AsyncIOMotorDatabase = Depends(get_database),
 ) -> PokemonListResponse:
-    total, items = await list_pokemon(db, search=search, type_=type, limit=limit, offset=offset)
+    total, items = await list_pokemon(
+        db, search=search, type_=type, sort_by=sort_by, order=order, limit=limit, offset=offset
+    )
     return PokemonListResponse(total=total, items=items)
 
 

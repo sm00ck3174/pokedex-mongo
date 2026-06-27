@@ -2,51 +2,22 @@ import httpx
 from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.services.pokemon_service import COLLECTION
 
-TYPE_EFFECTIVENESS = {
-    "normal": {"rock": 0.5, "ghost": 0, "steel": 0.5},
-    "fire": {"fire": 0.5, "water": 0.5, "grass": 2, "ice": 2, "bug": 2, "rock": 0.5, "dragon": 0.5, "steel": 2},
-    "water": {"fire": 2, "water": 0.5, "grass": 0.5, "ground": 2, "rock": 2, "dragon": 0.5},
-    "electric": {"water": 2, "electric": 0.5, "grass": 0.5, "ground": 0, "flying": 2, "dragon": 0.5},
-    "grass": {"fire": 0.5, "water": 2, "grass": 0.5, "poison": 0.5, "ground": 2, "flying": 0.5, "bug": 0.5, "rock": 2, "dragon": 0.5, "steel": 0.5},
-    "ice": {"fire": 0.5, "water": 0.5, "grass": 2, "ice": 0.5, "ground": 2, "flying": 2, "dragon": 2, "steel": 0.5},
-    "fighting": {"normal": 2, "ice": 2, "poison": 0.5, "flying": 0.5, "psychic": 0.5, "bug": 0.5, "rock": 2, "ghost": 0, "dark": 2, "steel": 2, "fairy": 0.5},
-    "poison": {"grass": 2, "poison": 0.5, "ground": 0.5, "rock": 0.5, "ghost": 0.5, "steel": 0, "fairy": 2},
-    "ground": {"fire": 2, "electric": 2, "grass": 0.5, "poison": 2, "flying": 0, "bug": 0.5, "rock": 2, "steel": 2},
-    "flying": {"electric": 0.5, "grass": 2, "fighting": 2, "bug": 2, "rock": 0.5, "steel": 0.5},
-    "psychic": {"fighting": 2, "poison": 2, "psychic": 0.5, "dark": 0, "steel": 0.5},
-    "bug": {"fire": 0.5, "grass": 2, "fighting": 0.5, "poison": 0.5, "flying": 0.5, "psychic": 2, "ghost": 0.5, "dark": 2, "steel": 0.5, "fairy": 0.5},
-    "rock": {"fire": 2, "ice": 2, "fighting": 0.5, "ground": 0.5, "flying": 2, "bug": 2, "steel": 0.5},
-    "ghost": {"normal": 0, "psychic": 2, "ghost": 2, "dark": 0.5},
-    "dragon": {"dragon": 2, "steel": 0.5, "fairy": 0},
-    "dark": {"fighting": 0.5, "psychic": 2, "ghost": 2, "dark": 0.5, "fairy": 0.5},
-    "steel": {"fire": 0.5, "water": 0.5, "electric": 0.5, "ice": 2, "rock": 2, "steel": 0.5, "fairy": 2},
-    "fairy": {"fire": 0.5, "fighting": 2, "poison": 0.5, "dragon": 2, "dark": 2, "steel": 0.5}
-}
-
-def calculate_weaknesses(types: list[str]) -> list[str]:
-    weaknesses = []
-    for attacker in TYPE_EFFECTIVENESS.keys():
-        multiplier = 1.0
-        for defender in types:
-            multiplier *= TYPE_EFFECTIVENESS[attacker].get(defender, 1.0)
-        if multiplier > 1.0:
-            weaknesses.append(attacker)
-    return weaknesses
-
 async def get_pokemon_detailed_info(db: AsyncIOMotorDatabase, number: int) -> dict:
-    # 1. Look up standard pokemon info from DB
+    # 1. Look up pokemon info from DB
     pokemon = await db[COLLECTION].find_one({"number": number}, {"_id": 0})
     if not pokemon:
         raise ValueError("Pokemon not found in database")
 
-    types = pokemon.get("types", [])
-    weaknesses = calculate_weaknesses(types)
+    # If details are already cached, return immediately
+    if pokemon.get("has_details"):
+        return pokemon
 
     # Fetch extra data from PokeAPI
     lore = "No lore available."
     evolutions = []
     shiny_url = f"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/{number}.png"
     cry_url = f"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/cries/{number}.ogg"
+    locations = []
 
     async with httpx.AsyncClient(timeout=10) as client:
         # Fetch Species info (for lore and evolution chain url)
@@ -76,7 +47,6 @@ async def get_pokemon_detailed_info(db: AsyncIOMotorDatabase, number: int) -> di
                         # Helper to resolve species name, number, image, types
                         async def resolve_species(node: dict):
                             sp_url = node.get("species", {}).get("url", "")
-                            # Parse ID from url: https://pokeapi.co/api/v2/pokemon-species/{id}/
                             try:
                                 sp_id = int(sp_url.strip("/").split("/")[-1])
                             except (ValueError, IndexError):
@@ -108,6 +78,88 @@ async def get_pokemon_detailed_info(db: AsyncIOMotorDatabase, number: int) -> di
             # Silently log/ignore external API fetch errors
             print(f"Error fetching extra PokeAPI info for #{number}: {e}")
 
+        # Fetch locations/encounters
+        try:
+            encounters_res = await client.get(f"https://pokeapi.co/api/v2/pokemon/{number}/encounters")
+            if encounters_res.status_code == 200:
+                encounters_data = encounters_res.json()
+                
+                import re
+                translations = {
+                    "area": "Área",
+                    "route": "Rota",
+                    "forest": "Floresta",
+                    "cave": "Caverna",
+                    "power plant": "Usina de Energia",
+                    "seafoam islands": "Ilhas Seafoam",
+                    "mansion": "Mansão",
+                    "safari zone": "Zona de Safári",
+                    "victory road": "Estrada da Vitória",
+                    "mt moon": "Monte Moon",
+                    "tower": "Torre",
+                    "hideout": "Esconderijo",
+                    "rock tunnel": "Túnel de Rocha",
+                    "digletts cave": "Caverna dos Diglett",
+                    "cerulean cave": "Caverna de Cerulean",
+                }
+                
+                def format_loc_name(name: str) -> str:
+                    cleaned = name.replace("-", " ")
+                    for eng, pt in translations.items():
+                        if eng in cleaned.lower():
+                            cleaned = re.sub(re.escape(eng), pt, cleaned, flags=re.IGNORECASE)
+                    return cleaned.title()
+
+                def translate_method(method: str) -> str:
+                    methods_pt = {
+                        "walk": "Grama Alta",
+                        "old-rod": "Vara Velha",
+                        "good-rod": "Vara Boa",
+                        "super-rod": "Super Vara",
+                        "surf": "Surfe",
+                        "gift": "Presente",
+                        "only-one": "Encontro Único",
+                        "pokeflute": "Pokéflute",
+                        "headbutt": "Cabeçada",
+                    }
+                    return methods_pt.get(method.lower(), method.replace("-", " ").title())
+
+                temp_locations = {}
+                for item in encounters_data:
+                    loc_name = item.get("location_area", {}).get("name", "")
+                    if not loc_name:
+                        continue
+                    
+                    cleaned = format_loc_name(loc_name)
+                    details_list = []
+                    
+                    for vd in item.get("version_details", []):
+                        ver_name = vd.get("version", {}).get("name", "").replace("-", " ").title()
+                        for ed in vd.get("encounter_details", []):
+                            method_raw = ed.get("method", {}).get("name", "")
+                            method_pt = translate_method(method_raw)
+                            chance = ed.get("chance", 0)
+                            min_lvl = ed.get("min_level", 0)
+                            max_lvl = ed.get("max_level", 0)
+                            
+                            lvl_str = f"Nív. {min_lvl}" if min_lvl == max_lvl else f"Nív. {min_lvl}-{max_lvl}"
+                            details_list.append(f"{method_pt} ({lvl_str}, {chance}% chance) em Pokémon {ver_name}")
+                    
+                    if details_list:
+                        if cleaned not in temp_locations:
+                            temp_locations[cleaned] = []
+                        temp_locations[cleaned].extend(details_list)
+
+                for k, v in temp_locations.items():
+                    seen_details = set()
+                    unique_details = [x for x in v if not (x in seen_details or seen_details.add(x))]
+                    locations.append({
+                        "name": k,
+                        "details": unique_details
+                    })
+        except Exception as e:
+            print(f"Error fetching encounters for #{number}: {e}")
+
     # Fallback to current pokemon in evolution chain if empty
     if not evolutions:
         evolutions = [{
@@ -117,11 +169,17 @@ async def get_pokemon_detailed_info(db: AsyncIOMotorDatabase, number: int) -> di
             "types": pokemon["types"]
         }]
 
-    return {
+    details_doc = {
         **pokemon,
         "lore": lore,
         "evolutions": evolutions,
-        "weaknesses": weaknesses,
         "shinyImageUrl": shiny_url,
-        "cryUrl": cry_url
+        "cryUrl": cry_url,
+        "locations": locations,
+        "has_details": True
     }
+
+    # Save to MongoDB cache
+    await db[COLLECTION].update_one({"number": number}, {"$set": details_doc})
+
+    return details_doc

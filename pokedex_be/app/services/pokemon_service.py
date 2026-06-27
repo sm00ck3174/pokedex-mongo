@@ -11,11 +11,20 @@ async def ensure_indexes(db: AsyncIOMotorDatabase) -> None:
     await db[COLLECTION].create_index("name")
     await db[COLLECTION].create_index("types")
 
+    # Backfill total_stats for older seeds
+    cursor = db[COLLECTION].find({"total_stats": {"$exists": False}})
+    async for doc in cursor:
+        stats = doc.get("stats", {})
+        total = sum(stats.values())
+        await db[COLLECTION].update_one({"_id": doc["_id"]}, {"$set": {"total_stats": total}})
+
 
 async def list_pokemon(
     db: AsyncIOMotorDatabase,
     search: str | None = None,
     type_: str | None = None,
+    sort_by: str | None = "number",
+    order: str | None = "asc",
     limit: int = 151,
     offset: int = 0,
 ) -> tuple[int, list[dict]]:
@@ -27,11 +36,26 @@ async def list_pokemon(
     if type_:
         filters["types"] = type_.lower()
 
+    # Determine sorting field
+    sort_field = "number"
+    if sort_by == "name":
+        sort_field = "name"
+    elif sort_by in ["hp", "attack", "defense", "specialAttack", "specialDefense", "speed"]:
+        sort_field = f"stats.{sort_by}"
+    elif sort_by == "total_stats":
+        sort_field = "total_stats"
+    elif sort_by == "weight":
+        sort_field = "weight"
+    elif sort_by == "height":
+        sort_field = "height"
+
+    sort_direction = 1 if order == "asc" else -1
+
     total = await db[COLLECTION].count_documents(filters)
     cursor = (
         db[COLLECTION]
         .find(filters, {"_id": 0})
-        .sort("number", 1)
+        .sort(sort_field, sort_direction)
         .skip(offset)
         .limit(limit)
     )

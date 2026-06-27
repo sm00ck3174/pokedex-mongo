@@ -32,17 +32,34 @@ export type EvolutionStep = {
   types: string[];
 };
 
+export type LocationDetail = {
+  name: string;
+  details: string[];
+};
+
 export type PokemonDetails = Pokemon & {
   lore: string;
   evolutions: EvolutionStep[];
-  weaknesses: string[];
   shinyImageUrl: string;
   cryUrl: string;
+  locations: LocationDetail[];
 };
 
-export async function getPokemon(): Promise<PokemonListResponse> {
-  const response = await fetch(`${API_URL}/pokemon?limit=151`, {
-    next: { revalidate: 60 },
+export async function getPokemon(params?: {
+  search?: string;
+  type?: string;
+  sortBy?: string;
+  order?: string;
+}): Promise<PokemonListResponse> {
+  const query = new URLSearchParams();
+  query.append("limit", "151");
+  if (params?.search) query.append("search", params.search);
+  if (params?.type && params.type !== "all") query.append("type", params.type);
+  if (params?.sortBy) query.append("sort_by", params.sortBy);
+  if (params?.order) query.append("order", params.order);
+
+  const response = await fetch(`${API_URL}/pokemon?${query.toString()}`, {
+    cache: "no-store"
   });
 
   if (!response.ok) {

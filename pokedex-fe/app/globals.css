@@ -382,6 +382,21 @@ select {
   max-height: calc(100vh - 40px);
 }
 
+.details-container-fullscreen {
+  background: var(--surface);
+  color: var(--ink);
+  width: 100%;
+  max-width: 100%;
+  border-radius: 16px;
+  border: 6px solid #811827;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  position: relative;
+  min-height: calc(100vh - 120px);
+}
+
 .modal-close {
   position: absolute;
   top: 14px;
@@ -451,7 +466,7 @@ select {
 }
 
 .details-visuals__image-container img:hover {
-  transform: scale(1.05) rotate(2deg);
+  transform: none;
 }
 
 .visuals-controls {
@@ -592,20 +607,6 @@ select {
   transition: width 0.5s ease-out;
 }
 
-.weaknesses-list {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 6px;
-}
-
-.weakness-badge {
-  font-size: 0.72rem;
-  font-weight: 800;
-  text-transform: uppercase;
-  padding: 4px 10px;
-  border-radius: 4px;
-  border: 1px solid rgba(0, 0, 0, 0.1);
-}
 
 .evolution-chain-list {
   display: flex;
@@ -668,23 +669,53 @@ select {
   to { transform: scale(1); opacity: 1; }
 }
 
-/* Weakness colors corresponding to types */
-.weakness-badge.bug { background: #a6b91a; color: #fff; }
-.weakness-badge.dark { background: #705746; color: #fff; }
-.weakness-badge.dragon { background: #6f35fc; color: #fff; }
-.weakness-badge.electric { background: #f7d02c; color: #333; }
-.weakness-badge.fairy { background: #d685ad; color: #fff; }
-.weakness-badge.fighting { background: #c22e28; color: #fff; }
-.weakness-badge.fire { background: #f08030; color: #fff; }
-.weakness-badge.flying { background: #a98ff3; color: #fff; }
-.weakness-badge.ghost { background: #705898; color: #fff; }
-.weakness-badge.grass { background: #78c850; color: #fff; }
-.weakness-badge.ground { background: #e0c068; color: #fff; }
-.weakness-badge.ice { background: #98d8d8; color: #333; }
-.weakness-badge.normal { background: #a8a77a; color: #fff; }
-.weakness-badge.poison { background: #a040a0; color: #fff; }
-.weakness-badge.psychic { background: #f85888; color: #fff; }
-.weakness-badge.rock { background: #b8a038; color: #fff; }
-.weakness-badge.steel { background: #b7b7d0; color: #333; }
-.weakness-badge.water { background: #6890f0; color: #fff; }
+
+/* Type interactive buttons */
+.type-btn {
+  padding: 8px 16px;
+  border-radius: 20px;
+  border: 2px solid transparent;
+  font-size: 0.85rem;
+  font-weight: bold;
+  cursor: pointer;
+  transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  background: rgba(255, 255, 255, 0.08);
+  color: rgba(255, 255, 255, 0.8);
+  text-transform: capitalize;
+}
+
+.type-btn:hover {
+  transform: translateY(-2px);
+  color: #fff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.type-btn.active {
+  transform: scale(1.05);
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.25);
+  border-color: #fff;
+  color: #fff;
+}
+
+.type-btn.type-all { background: #4b5563; }
+.type-btn.type-all.active { background: #1f2937; }
+.type-btn.type-grass { background: #78c850; }
+.type-btn.type-fire { background: #f08030; }
+.type-btn.type-water { background: #6890f0; }
+.type-btn.type-electric { background: #f7d02c; color: #333; }
+.type-btn.type-psychic { background: #f85888; }
+.type-btn.type-normal { background: #a8a77a; }
+.type-btn.type-poison { background: #a040a0; }
+.type-btn.type-flying { background: #a98ff3; }
+.type-btn.type-bug { background: #a6b91a; }
+.type-btn.type-ground { background: #e0c068; color: #333; }
+.type-btn.type-rock { background: #b8a038; }
+.type-btn.type-fighting { background: #c22e28; }
+.type-btn.type-ghost { background: #705898; }
+.type-btn.type-ice { background: #98d8d8; color: #333; }
+.type-btn.type-dragon { background: #6f35fc; }
+.type-btn.type-dark { background: #705746; }
+.type-btn.type-steel { background: #b7b7d0; color: #333; }
+.type-btn.type-fairy { background: #d685ad; }
+
 

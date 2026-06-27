@@ -37,6 +37,8 @@ def map_stats(stats: list[dict]) -> dict[str, int]:
 def map_pokemon(data: dict) -> PokemonDocument:
     official_art = data["sprites"]["other"]["official-artwork"]["front_default"]
     fallback_sprite = data["sprites"]["front_default"]
+    stats = map_stats(data["stats"])
+    total_stats = sum(stats.values())
 
     return {
         "number": data["id"],
@@ -46,7 +48,8 @@ def map_pokemon(data: dict) -> PokemonDocument:
         "weight": data["weight"],
         "abilities": [item["ability"]["name"] for item in data["abilities"]],
         "imageUrl": official_art or fallback_sprite or "",
-        "stats": map_stats(data["stats"]),
+        "stats": stats,
+        "total_stats": total_stats,
     }
 
 

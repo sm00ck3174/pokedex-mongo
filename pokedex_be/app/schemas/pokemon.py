@@ -34,12 +34,17 @@ class EvolutionStep(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class LocationDetail(BaseModel):
+    name: str
+    details: list[str]
+
+
 class PokemonDetailsOut(PokemonOut):
     lore: str
     evolutions: list[EvolutionStep]
-    weaknesses: list[str]
     shiny_image_url: str = Field(alias="shinyImageUrl")
     cry_url: str = Field(alias="cryUrl")
+    locations: list[LocationDetail] = []
 
     model_config = ConfigDict(populate_by_name=True)
 
