@@ -2,9 +2,10 @@ import type { Metadata } from "next";
 
 import "./globals.css";
 
+// Application metadata configurations for SEO and browser title
 export const metadata: Metadata = {
   title: "Pokedex",
-  description: "Pokedex com Next.js, FastAPI e MongoDB",
+  description: "Pokedex built with Next.js, FastAPI, and MongoDB",
 };
 
 export default function RootLayout({
@@ -13,7 +14,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="pt-BR">
+    // Set document language to English
+    <html lang="en">
       <body>{children}</body>
     </html>
   );

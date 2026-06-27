@@ -2,6 +2,9 @@ from typing import TypedDict
 
 
 class PokemonStats(TypedDict):
+    """
+    Type definition for Pokemon base statistics in the database.
+    """
     hp: int
     attack: int
     defense: int
@@ -11,6 +14,9 @@ class PokemonStats(TypedDict):
 
 
 class PokemonDocument(TypedDict):
+    """
+    Type definition representing a Pokemon document stored in MongoDB.
+    """
     number: int
     name: str
     types: list[str]

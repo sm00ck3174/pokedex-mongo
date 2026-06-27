@@ -1,32 +1,32 @@
 # Pokedex Mongo
 
-Script de inicialização para Windows e Linux.
+Startup script for Windows and Linux.
 
-## Como usar
+## How to use
 
 ### Windows (PowerShell)
-Abra o PowerShell na raiz do repositório e execute:
+Open PowerShell in the root of the repository and run:
 ```powershell
 .\start-project.ps1
 ```
 
 ### Linux / macOS (Bash)
-Abra o terminal na raiz do repositório e execute:
+Open the terminal in the root of the repository and run:
 ```bash
 ./start-project.sh
 ```
 
 
-O script irá:
+The script will:
 
-- iniciar o MongoDB com `docker compose up -d mongo`
-- criar o virtualenv do backend
-- instalar dependências do backend
-- copiar `.env.example` para `.env` se necessário
-- rodar o seed de Pokemon no MongoDB
-- instalar dependências do frontend
-- copiar `.env.example` para `.env.local` se necessário
-- abrir o backend e o frontend em novas janelas do PowerShell
+- Start MongoDB with `docker compose up -d mongo`
+- Create the backend virtual environment (virtualenv)
+- Install backend dependencies
+- Copy `.env.example` to `.env` if necessary
+- Run the Pokemon seed in MongoDB
+- Install frontend dependencies
+- Copy `.env.example` to `.env.local` if necessary
+- Start both the backend and frontend services
 
 ## URLs
 

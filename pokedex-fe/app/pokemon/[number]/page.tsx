@@ -6,25 +6,26 @@ import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import { getPokemonDetails, type PokemonDetails } from "@/lib/api";
 
+// Mapping of types to localized English labels
 const typeLabels: Record<string, string> = {
-  bug: "Inseto",
-  dark: "Sombrio",
-  dragon: "Dragão",
-  electric: "Elétrico",
-  fairy: "Fada",
-  fighting: "Lutador",
-  fire: "Fogo",
-  flying: "Voador",
-  ghost: "Fantasma",
-  grass: "Grama",
-  ground: "Terra",
-  ice: "Gelo",
+  bug: "Bug",
+  dark: "Dark",
+  dragon: "Dragon",
+  electric: "Electric",
+  fairy: "Fairy",
+  fighting: "Fighting",
+  fire: "Fire",
+  flying: "Flying",
+  ghost: "Ghost",
+  grass: "Grass",
+  ground: "Ground",
+  ice: "Ice",
   normal: "Normal",
-  poison: "Veneno",
-  psychic: "Psíquico",
-  rock: "Pedra",
-  steel: "Metal",
-  water: "Água",
+  poison: "Poison",
+  psychic: "Psychic",
+  rock: "Rock",
+  steel: "Steel",
+  water: "Water",
 };
 
 export default function PokemonDetailPage() {
@@ -38,8 +39,9 @@ export default function PokemonDetailPage() {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    // Validate that the ID parameter is a number
     if (isNaN(pokemonNumber)) {
-      setError("Número de Pokémon inválido.");
+      setError("Invalid Pokémon number.");
       setLoading(false);
       return;
     }
@@ -48,6 +50,7 @@ export default function PokemonDetailPage() {
     setLoading(true);
     setError(null);
 
+    // Fetch detailed Pokemon info from the API
     getPokemonDetails(pokemonNumber)
       .then((data) => {
         if (active) {
@@ -56,9 +59,9 @@ export default function PokemonDetailPage() {
         }
       })
       .catch((err) => {
-        console.error("Erro ao carregar detalhes:", err);
+        console.error("Error loading details:", err);
         if (active) {
-          setError(`Não foi possível carregar os detalhes deste Pokémon: ${err instanceof Error ? err.message : String(err)}`);
+          setError(`Failed to load details for this Pokémon: ${err instanceof Error ? err.message : String(err)}`);
           setLoading(false);
         }
       });
@@ -68,27 +71,29 @@ export default function PokemonDetailPage() {
     };
   }, [pokemonNumber]);
 
+  // Loading Screen Layout
   if (loading) {
     return (
       <main className="page-shell">
         <div style={{ display: "grid", placeItems: "center", minHeight: "300px" }}>
           <div style={{ textAlign: "center", fontWeight: "bold", fontSize: "1.2rem" }}>
-            Carregando dados da PokeAPI...
+            Loading data from PokeAPI...
           </div>
         </div>
       </main>
     );
   }
 
+  // Error/Fallback Screen Layout
   if (error || !details) {
     return (
       <main className="page-shell">
         <div style={{ display: "grid", placeItems: "center", minHeight: "300px" }}>
           <div style={{ textAlign: "center", color: "var(--dex-red)", fontWeight: "bold", fontSize: "1.2rem" }}>
-            {error || "Erro desconhecido"}
+            {error || "Unknown error"}
           </div>
           <Link href="/" className="btn-control" style={{ marginTop: "20px", textDecoration: "none" }}>
-            Voltar para a Pokédex
+            Back to Pokédex
           </Link>
         </div>
       </main>
@@ -96,15 +101,18 @@ export default function PokemonDetailPage() {
   }
 
   const mainType = details.types[0] ?? "normal";
+
+  // Label configuration for each base stat
   const statLabels: Record<keyof typeof details.stats, string> = {
     hp: "HP",
-    attack: "Ataque",
-    defense: "Defesa",
+    attack: "Attack",
+    defense: "Defense",
     specialAttack: "Sp. Atk",
     specialDefense: "Sp. Def",
-    speed: "Veloc.",
+    speed: "Speed",
   };
 
+  // Helper function to colorize stats based on their numeric value
   const getStatColor = (value: number) => {
     if (value < 50) return { color: "#ff4757", bg: "linear-gradient(90deg, #ff6b81, #ff4757)" }; // Red/Rose (Low)
     if (value < 85) return { color: "#ffa502", bg: "linear-gradient(90deg, #ffbe76, #ffa502)" }; // Yellow/Orange (Medium)
@@ -116,13 +124,14 @@ export default function PokemonDetailPage() {
     <main style={{ width: "100%", maxWidth: "100%", minHeight: "100vh", padding: "24px", boxSizing: "border-box" }}>
       <div style={{ marginBottom: "20px" }}>
         <Link href="/" className="btn-control" style={{ textDecoration: "none", display: "inline-flex", alignItems: "center" }}>
-          ← Voltar para a Pokédex
+          ← Back to Pokédex
         </Link>
       </div>
  
       <div className="details-container-fullscreen">
         <div className="modal-body">
           <div className="details-grid" style={{ display: "flex", gap: "36px", flexWrap: "wrap", alignItems: "flex-start" }}>
+            {/* Visual element with main type thematic coloring */}
             <div className={`details-visuals type-${mainType}`} style={{ minHeight: "350px", justifyContent: "center", width: "100%", maxWidth: "340px", flex: "0 0 auto", borderRadius: "12px", position: "sticky", top: "24px", alignSelf: "flex-start", margin: "0 auto" }}>
               <div className="details-visuals__image-container" style={{ width: "100%", maxWidth: "280px" }}>
                 <Image
@@ -136,6 +145,7 @@ export default function PokemonDetailPage() {
               </div>
             </div>
  
+            {/* Detailed metadata panel */}
             <div className="details-info" style={{ flex: "1 1 400px" }}>
               <div className="details-info__header">
                 <div className="details-info__title-row">
@@ -154,11 +164,12 @@ export default function PokemonDetailPage() {
               </div>
  
               <p className="details-info__lore" style={{ fontSize: "1.1rem", lineHeight: "1.6" }}>
-                {details.lore || "Sem descrição disponível."}
+                {details.lore || "No description available."}
               </p>
  
+              {/* Stats Section */}
               <div>
-                <h3 className="details-section-title">Status Base</h3>
+                <h3 className="details-section-title">Base Stats</h3>
                 <div className="stats-list">
                   {(Object.keys(details.stats) as Array<keyof typeof details.stats>).map((key) => {
                     const value = details.stats[key];
@@ -184,8 +195,9 @@ export default function PokemonDetailPage() {
                 </div>
               </div>
  
+              {/* Encounter Locations Section */}
               <div>
-                <h3 className="details-section-title">Onde Encontrar</h3>
+                <h3 className="details-section-title">Where to Find</h3>
                 {details.locations && details.locations.length > 0 ? (
                   <div className="locations-list" style={{ display: "flex", flexDirection: "column", gap: "10px", marginTop: "12px" }}>
                     {details.locations.map((loc) => (
@@ -207,14 +219,15 @@ export default function PokemonDetailPage() {
                   </div>
                 ) : (
                   <p style={{ color: "var(--muted)", fontSize: "0.9rem", margin: "4px 0 0" }}>
-                    Este Pokémon não foi encontrado na natureza selvagem (pode ser obtido por evolução ou eventos especiais).
+                    This Pokémon cannot be found in the wild (it may be obtained through evolution or special events).
                   </p>
                 )}
               </div>
  
+              {/* Evolution Chain Section */}
               {details.evolutions && details.evolutions.length > 1 && (
                 <div>
-                  <h3 className="details-section-title">Evoluções</h3>
+                  <h3 className="details-section-title">Evolutions</h3>
                   <div className="evolution-chain-list">
                     {details.evolutions.map((evo, index) => (
                       <div key={evo.number} className="evolution-chain-step">

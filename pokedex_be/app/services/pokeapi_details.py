@@ -3,16 +3,21 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 from app.services.pokemon_service import COLLECTION
 
 async def get_pokemon_detailed_info(db: AsyncIOMotorDatabase, number: int) -> dict:
+    """
+    Fetches detailed metadata for a specific Pokemon (by database number).
+    Aggregates data from MongoDB, PokeAPI (species details and lore, evolution chains, locations),
+    and caches the results back to MongoDB to optimize subsequent queries.
+    """
     # 1. Look up pokemon info from DB
     pokemon = await db[COLLECTION].find_one({"number": number}, {"_id": 0})
     if not pokemon:
         raise ValueError("Pokemon not found in database")
 
-    # If details are already cached, return immediately
+    # If detailed information is already cached, return it directly
     if pokemon.get("has_details"):
         return pokemon
 
-    # Fetch extra data from PokeAPI
+    # Prepare default fallback values for extra details
     lore = "No lore available."
     evolutions = []
     shiny_url = f"https://raw.githubusercontent.com/PokeAPI/sprites/master/sprites/pokemon/shiny/{number}.png"
@@ -26,12 +31,11 @@ async def get_pokemon_detailed_info(db: AsyncIOMotorDatabase, number: int) -> di
             if species_res.status_code == 200:
                 species_data = species_res.json()
                 
-                # Extract Portuguese flavor text, or fall back to English
+                # Extract English flavor text, falling back to any available language if not present
                 flavor_entries = species_data.get("flavor_text_entries", [])
-                pt_entry = next((e for e in flavor_entries if e["language"]["name"] in ["pt", "pt-BR"]), None)
                 en_entry = next((e for e in flavor_entries if e["language"]["name"] == "en"), None)
                 
-                entry = pt_entry or en_entry
+                entry = en_entry or (flavor_entries[0] if flavor_entries else None)
                 if entry:
                     lore = entry["flavor_text"].replace("\n", " ").replace("\f", " ").replace("\r", " ")
 
@@ -41,10 +45,10 @@ async def get_pokemon_detailed_info(db: AsyncIOMotorDatabase, number: int) -> di
                     evo_res = await client.get(evo_chain_url)
                     if evo_res.status_code == 200:
                         evo_data = evo_res.json()
-                        # Traverse chain
+                        # Traverse evolution chain
                         chain_node = evo_data.get("chain", {})
                         
-                        # Helper to resolve species name, number, image, types
+                        # Helper function to resolve species name, number, image, types
                         async def resolve_species(node: dict):
                             sp_url = node.get("species", {}).get("url", "")
                             try:
@@ -52,7 +56,7 @@ async def get_pokemon_detailed_info(db: AsyncIOMotorDatabase, number: int) -> di
                             except (ValueError, IndexError):
                                 return
                             
-                            # Look up in DB
+                            # Look up the species in the local DB
                             db_pokemon = await db[COLLECTION].find_one({"number": sp_id}, {"_id": 0})
                             if db_pokemon:
                                 evolutions.append({
@@ -62,7 +66,7 @@ async def get_pokemon_detailed_info(db: AsyncIOMotorDatabase, number: int) -> di
                                     "types": db_pokemon["types"]
                                 })
                             else:
-                                # Fallback construction
+                                # Fallback construct if not stored locally
                                 evolutions.append({
                                     "number": sp_id,
                                     "name": node.get("species", {}).get("name", ""),
@@ -85,44 +89,27 @@ async def get_pokemon_detailed_info(db: AsyncIOMotorDatabase, number: int) -> di
                 encounters_data = encounters_res.json()
                 
                 import re
-                translations = {
-                    "area": "Área",
-                    "route": "Rota",
-                    "forest": "Floresta",
-                    "cave": "Caverna",
-                    "power plant": "Usina de Energia",
-                    "seafoam islands": "Ilhas Seafoam",
-                    "mansion": "Mansão",
-                    "safari zone": "Zona de Safári",
-                    "victory road": "Estrada da Vitória",
-                    "mt moon": "Monte Moon",
-                    "tower": "Torre",
-                    "hideout": "Esconderijo",
-                    "rock tunnel": "Túnel de Rocha",
-                    "digletts cave": "Caverna dos Diglett",
-                    "cerulean cave": "Caverna de Cerulean",
-                }
-                
+
                 def format_loc_name(name: str) -> str:
+                    # Clean up location name by replacing hyphens and formatting to Title Case
                     cleaned = name.replace("-", " ")
-                    for eng, pt in translations.items():
-                        if eng in cleaned.lower():
-                            cleaned = re.sub(re.escape(eng), pt, cleaned, flags=re.IGNORECASE)
+                    cleaned = re.sub(r"\bmt\b", "Mt.", cleaned, flags=re.IGNORECASE)
                     return cleaned.title()
 
-                def translate_method(method: str) -> str:
-                    methods_pt = {
-                        "walk": "Grama Alta",
-                        "old-rod": "Vara Velha",
-                        "good-rod": "Vara Boa",
-                        "super-rod": "Super Vara",
-                        "surf": "Surfe",
-                        "gift": "Presente",
-                        "only-one": "Encontro Único",
-                        "pokeflute": "Pokéflute",
-                        "headbutt": "Cabeçada",
+                def format_method(method: str) -> str:
+                    # Provide user-friendly English equivalents for common encounter methods
+                    methods_en = {
+                        "walk": "Tall Grass",
+                        "old-rod": "Old Rod",
+                        "good-rod": "Good Rod",
+                        "super-rod": "Super Rod",
+                        "surf": "Surf",
+                        "gift": "Gift",
+                        "only-one": "Special Encounter",
+                        "pokeflute": "Poké Flute",
+                        "headbutt": "Headbutt",
                     }
-                    return methods_pt.get(method.lower(), method.replace("-", " ").title())
+                    return methods_en.get(method.lower(), method.replace("-", " ").title())
 
                 temp_locations = {}
                 for item in encounters_data:
@@ -137,13 +124,13 @@ async def get_pokemon_detailed_info(db: AsyncIOMotorDatabase, number: int) -> di
                         ver_name = vd.get("version", {}).get("name", "").replace("-", " ").title()
                         for ed in vd.get("encounter_details", []):
                             method_raw = ed.get("method", {}).get("name", "")
-                            method_pt = translate_method(method_raw)
+                            method_en = format_method(method_raw)
                             chance = ed.get("chance", 0)
                             min_lvl = ed.get("min_level", 0)
                             max_lvl = ed.get("max_level", 0)
                             
-                            lvl_str = f"Nív. {min_lvl}" if min_lvl == max_lvl else f"Nív. {min_lvl}-{max_lvl}"
-                            details_list.append(f"{method_pt} ({lvl_str}, {chance}% chance) em Pokémon {ver_name}")
+                            lvl_str = f"Lvl. {min_lvl}" if min_lvl == max_lvl else f"Lvl. {min_lvl}-{max_lvl}"
+                            details_list.append(f"{method_en} ({lvl_str}, {chance}% chance) in Pokémon {ver_name}")
                     
                     if details_list:
                         if cleaned not in temp_locations:

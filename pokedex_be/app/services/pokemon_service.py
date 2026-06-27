@@ -2,11 +2,15 @@ from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.services.pokeapi import fetch_pokemon_batch
 
-
+# MongoDB collection name for storing Pokemon data
 COLLECTION = "pokemon"
 
 
 async def ensure_indexes(db: AsyncIOMotorDatabase) -> None:
+    """
+    Ensures database indexes exist for performance and uniqueness.
+    Performs data migration to populate total_stats for older schemas.
+    """
     await db[COLLECTION].create_index("number", unique=True)
     await db[COLLECTION].create_index("name")
     await db[COLLECTION].create_index("types")
@@ -28,15 +32,27 @@ async def list_pokemon(
     limit: int = 151,
     offset: int = 0,
 ) -> tuple[int, list[dict]]:
+    """
+    Queries and lists Pokemon documents from MongoDB matching the specified filter,
+    sorting, and pagination parameters.
+    """
     filters: dict = {}
 
+    # Match by ID number if numeric, or match name substring (case-insensitive regex)
     if search:
-        filters["name"] = {"$regex": search, "$options": "i"}
+        if search.isdigit():
+            filters["$or"] = [
+                {"number": int(search)},
+                {"name": {"$regex": search, "$options": "i"}}
+            ]
+        else:
+            filters["name"] = {"$regex": search, "$options": "i"}
 
+    # Filter by specific Pokemon type (case-insensitive)
     if type_:
         filters["types"] = type_.lower()
 
-    # Determine sorting field
+    # Determine database sorting field based on parameter
     sort_field = "number"
     if sort_by == "name":
         sort_field = "name"
@@ -49,8 +65,10 @@ async def list_pokemon(
     elif sort_by == "height":
         sort_field = "height"
 
+    # Sort direction: asc (1) or desc (-1)
     sort_direction = 1 if order == "asc" else -1
 
+    # Fetch count of total matches and paginated list of records
     total = await db[COLLECTION].count_documents(filters)
     cursor = (
         db[COLLECTION]
@@ -63,10 +81,17 @@ async def list_pokemon(
 
 
 async def get_pokemon_by_number(db: AsyncIOMotorDatabase, number: int) -> dict | None:
+    """
+    Retrieves a single Pokemon document matching the specified ID number.
+    """
     return await db[COLLECTION].find_one({"number": number}, {"_id": 0})
 
 
 async def seed_pokemon(db: AsyncIOMotorDatabase, limit: int = 151) -> int:
+    """
+    Seeds the MongoDB collection with base data fetched from PokeAPI.
+    Clears any existing data in the database collection prior to insertion.
+    """
     await ensure_indexes(db)
     pokemon = await fetch_pokemon_batch(limit)
     await db[COLLECTION].delete_many({})

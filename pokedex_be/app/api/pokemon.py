@@ -6,19 +6,23 @@ from app.schemas.pokemon import PokemonListResponse, PokemonOut, PokemonDetailsO
 from app.services.pokemon_service import get_pokemon_by_number, list_pokemon
 from app.services.pokeapi_details import get_pokemon_detailed_info
 
+# Initialize APIRouter for Pokemon-related endpoints
 router = APIRouter(prefix="/pokemon", tags=["pokemon"])
 
 
 @router.get("", response_model=PokemonListResponse)
 async def find_all_pokemon(
-    search: str | None = Query(default=None, min_length=1),
-    type: str | None = Query(default=None, min_length=1),
+    search: str | None = Query(default=None),
+    type: str | None = Query(default=None),
     sort_by: str | None = Query(default="number"),
     order: str | None = Query(default="asc"),
     limit: int = Query(default=151, ge=1, le=500),
     offset: int = Query(default=0, ge=0),
     db: AsyncIOMotorDatabase = Depends(get_database),
 ) -> PokemonListResponse:
+    """
+    Retrieves a paginated, filterable, and sorted list of Pokemon from the database.
+    """
     total, items = await list_pokemon(
         db, search=search, type_=type, sort_by=sort_by, order=order, limit=limit, offset=offset
     )
@@ -30,9 +34,12 @@ async def find_pokemon(
     number: int,
     db: AsyncIOMotorDatabase = Depends(get_database),
 ) -> dict:
+    """
+    Retrieves base information for a specific Pokemon by its database ID number.
+    """
     pokemon = await get_pokemon_by_number(db, number)
     if not pokemon:
-        raise HTTPException(status_code=404, detail="Pokemon nao encontrado")
+        raise HTTPException(status_code=404, detail="Pokemon not found")
 
     return pokemon
 
@@ -42,6 +49,9 @@ async def find_pokemon_details(
     number: int,
     db: AsyncIOMotorDatabase = Depends(get_database),
 ) -> dict:
+    """
+    Retrieves detailed metadata (lore, evolutions, locations, etc.) for a specific Pokemon.
+    """
     try:
         return await get_pokemon_detailed_info(db, number)
     except ValueError as e:

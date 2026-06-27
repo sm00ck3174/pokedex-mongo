@@ -1,8 +1,8 @@
 # Pokedex FE
 
-Frontend em React com Next.js para consumir a API FastAPI.
+React frontend with Next.js to consume the FastAPI API.
 
-## Rodar
+## Run
 
 ```bash
 cd pokedex-fe
@@ -14,7 +14,7 @@ cp .env.example .env.local
 npm run dev
 ```
 
-Antes de abrir o front, rode o Mongo, a API e o seed:
+Before launching the frontend, make sure to run MongoDB, start the API, and seed the database:
 
 ```bash
 docker compose up -d mongo

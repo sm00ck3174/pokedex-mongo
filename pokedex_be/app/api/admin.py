@@ -6,6 +6,7 @@ from app.db.mongo import get_database
 from app.schemas.pokemon import SeedResponse
 from app.services.pokemon_service import seed_pokemon
 
+# Initialize APIRouter for administrator operations
 router = APIRouter(prefix="/admin", tags=["admin"])
 
 
@@ -15,11 +16,15 @@ async def seed_pokemon_endpoint(
     settings: Settings = Depends(get_settings),
     db: AsyncIOMotorDatabase = Depends(get_database),
 ) -> SeedResponse:
+    """
+    Endpoint to seed the database with Pokemon data.
+    Only accessible if ALLOW_SEED_ENDPOINT environment variable is enabled.
+    """
     if not settings.allow_seed_endpoint:
         raise HTTPException(
             status_code=403,
-            detail="Endpoint de seed desativado. Use o script scripts/seed_pokemon.py.",
+            detail="Seed endpoint is disabled. Use the scripts/seed_pokemon.py script.",
         )
 
     inserted = await seed_pokemon(db, limit=limit)
-    return SeedResponse(inserted=inserted, message="Seed finalizado")
+    return SeedResponse(inserted=inserted, message="Seed completed successfully")

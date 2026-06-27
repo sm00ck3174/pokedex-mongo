@@ -23,6 +23,7 @@ export type PokemonListResponse = {
   items: Pokemon[];
 };
 
+// Configure Backend API Host URL
 const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
 
 export type EvolutionStep = {
@@ -45,6 +46,9 @@ export type PokemonDetails = Pokemon & {
   locations: LocationDetail[];
 };
 
+/**
+ * Fetches list of Pokemon from backend API with optional search, type filter, and sorting.
+ */
 export async function getPokemon(params?: {
   search?: string;
   type?: string;
@@ -63,17 +67,20 @@ export async function getPokemon(params?: {
   });
 
   if (!response.ok) {
-    throw new Error("Nao foi possivel carregar a Pokedex.");
+    throw new Error("Could not load Pokedex.");
   }
 
   return response.json();
 }
 
+/**
+ * Fetches detailed metadata for a specific Pokemon by its number.
+ */
 export async function getPokemonDetails(number: number): Promise<PokemonDetails> {
   const response = await fetch(`${API_URL}/pokemon/${number}/details`);
 
   if (!response.ok) {
-    throw new Error("Nao foi possivel carregar os detalhes do Pokemon.");
+    throw new Error("Could not load Pokémon details.");
   }
 
   return response.json();

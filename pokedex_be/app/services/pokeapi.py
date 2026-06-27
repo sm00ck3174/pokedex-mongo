@@ -4,10 +4,14 @@ import httpx
 
 from app.models.pokemon import PokemonDocument
 
+# Endpoint for fetching base Pokemon data
 POKEAPI_URL = "https://pokeapi.co/api/v2/pokemon"
 
 
 def map_stats(stats: list[dict]) -> dict[str, int]:
+    """
+    Maps Pokemon API stat names to internal database schema fields.
+    """
     result = {
         "hp": 0,
         "attack": 0,
@@ -35,6 +39,10 @@ def map_stats(stats: list[dict]) -> dict[str, int]:
 
 
 def map_pokemon(data: dict) -> PokemonDocument:
+    """
+    Transforms PokeAPI raw JSON data into the PokemonDocument format for MongoDB.
+    Calculates total_stats dynamically.
+    """
     official_art = data["sprites"]["other"]["official-artwork"]["front_default"]
     fallback_sprite = data["sprites"]["front_default"]
     stats = map_stats(data["stats"])
@@ -54,6 +62,10 @@ def map_pokemon(data: dict) -> PokemonDocument:
 
 
 async def fetch_pokemon_batch(limit: int = 151) -> list[PokemonDocument]:
+    """
+    Fetches a range of Pokemon from PokeAPI in sequence up to the limit.
+    Includes a small sleep delay to respect PokeAPI rate limits.
+    """
     async with httpx.AsyncClient(timeout=20) as client:
         items: list[PokemonDocument] = []
 
