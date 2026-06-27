@@ -1,14 +1,21 @@
 # Pokedex Mongo
 
-Script de inicialização para Windows.
+Script de inicialização para Windows e Linux.
 
 ## Como usar
 
+### Windows (PowerShell)
 Abra o PowerShell na raiz do repositório e execute:
-
 ```powershell
 .\start-project.ps1
 ```
+
+### Linux / macOS (Bash)
+Abra o terminal na raiz do repositório e execute:
+```bash
+./start-project.sh
+```
+
 
 O script irá:
 

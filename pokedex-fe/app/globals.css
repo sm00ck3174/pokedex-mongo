@@ -350,3 +350,341 @@ select {
     justify-content: flex-start;
   }
 }
+
+/* Pokemon Details Modal */
+.modal-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.75);
+  backdrop-filter: blur(4px);
+  display: grid;
+  place-items: center;
+  z-index: 1000;
+  padding: 16px;
+  animation: fadeIn 0.2s ease-out;
+}
+
+.modal-container {
+  background: var(--surface);
+  color: var(--ink);
+  width: min(800px, 100%);
+  border-radius: 12px;
+  border: 6px solid #811827;
+  overflow: hidden;
+  box-shadow: 0 24px 60px rgba(0, 0, 0, 0.5);
+  display: flex;
+  flex-direction: column;
+  animation: scaleUp 0.25s cubic-bezier(0.34, 1.56, 0.64, 1);
+  position: relative;
+  max-height: calc(100vh - 40px);
+}
+
+.modal-close {
+  position: absolute;
+  top: 14px;
+  right: 14px;
+  background: rgba(0, 0, 0, 0.4);
+  color: #fff;
+  border: none;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  font-size: 1.4rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+  transition: background 0.2s, transform 0.2s;
+  z-index: 10;
+}
+
+.modal-close:hover {
+  background: rgba(0, 0, 0, 0.75);
+  transform: scale(1.1);
+}
+
+.modal-body {
+  padding: 24px;
+  overflow-y: auto;
+}
+
+.details-grid {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr;
+  gap: 28px;
+}
+
+@media (max-width: 680px) {
+  .details-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+.details-visuals {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 16px;
+  border-radius: 8px;
+  padding: 20px;
+  color: #fff;
+  position: relative;
+}
+
+.details-visuals__image-container {
+  width: 100%;
+  aspect-ratio: 1;
+  display: grid;
+  place-items: center;
+  position: relative;
+}
+
+.details-visuals__image-container img {
+  width: 90%;
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 16px 20px rgba(0, 0, 0, 0.3));
+  transition: transform 0.3s ease;
+}
+
+.details-visuals__image-container img:hover {
+  transform: scale(1.05) rotate(2deg);
+}
+
+.visuals-controls {
+  display: flex;
+  gap: 12px;
+  width: 100%;
+  justify-content: center;
+}
+
+.btn-control {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+  border: 2px solid rgba(255, 255, 255, 0.4);
+  padding: 8px 16px;
+  border-radius: 999px;
+  font-size: 0.82rem;
+  font-weight: bold;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.2s;
+}
+
+.btn-control:hover {
+  background: #fff;
+  color: var(--ink);
+  border-color: #fff;
+}
+
+.btn-control.active {
+  background: var(--dex-yellow);
+  color: var(--ink);
+  border-color: var(--dex-yellow);
+}
+
+.details-info {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.details-info__header {
+  border-bottom: 2px solid var(--line);
+  padding-bottom: 12px;
+}
+
+.details-info__title-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.details-info__title-row h2 {
+  margin: 0;
+  font-size: 2.2rem;
+  text-transform: capitalize;
+}
+
+.details-info__number {
+  font-size: 1.5rem;
+  font-weight: 800;
+  color: var(--muted);
+}
+
+.details-info__types {
+  display: flex;
+  gap: 8px;
+  margin-top: 8px;
+}
+
+.details-info__types span {
+  font-size: 0.78rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: #edf1f7;
+  color: #253248;
+}
+
+.details-info__lore {
+  font-style: italic;
+  line-height: 1.5;
+  color: #3b4558;
+  background: rgba(0, 0, 0, 0.03);
+  padding: 12px 16px;
+  border-left: 4px solid var(--dex-blue);
+  border-radius: 4px;
+}
+
+.details-section-title {
+  font-size: 0.88rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  color: var(--muted);
+  margin: 0 0 10px;
+  border-bottom: 1px solid var(--line);
+  padding-bottom: 4px;
+}
+
+.stats-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.stat-row {
+  display: grid;
+  grid-template-columns: 80px 36px 1fr;
+  align-items: center;
+  gap: 12px;
+  font-size: 0.85rem;
+  font-weight: bold;
+}
+
+.stat-label {
+  text-transform: uppercase;
+  color: #555;
+  font-size: 0.76rem;
+}
+
+.stat-val {
+  text-align: right;
+}
+
+.stat-bar {
+  height: 10px;
+  background: #e2e8f0;
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.stat-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: var(--dex-blue);
+  transition: width 0.5s ease-out;
+}
+
+.weaknesses-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.weakness-badge {
+  font-size: 0.72rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  padding: 4px 10px;
+  border-radius: 4px;
+  border: 1px solid rgba(0, 0, 0, 0.1);
+}
+
+.evolution-chain-list {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.evolution-chain-step {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.evolution-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: #fff;
+  border: 2px solid var(--line);
+  border-radius: 8px;
+  padding: 8px;
+  cursor: pointer;
+  transition: all 0.2s;
+  width: 90px;
+}
+
+.evolution-card:hover {
+  border-color: var(--dex-blue);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.evolution-card img {
+  width: 60px;
+  height: 60px;
+  object-fit: contain;
+}
+
+.evolution-card span {
+  font-size: 0.74rem;
+  font-weight: bold;
+  text-transform: capitalize;
+  text-align: center;
+  margin-top: 4px;
+}
+
+.evolution-arrow {
+  font-size: 1.4rem;
+  color: var(--muted);
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes scaleUp {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+/* Weakness colors corresponding to types */
+.weakness-badge.bug { background: #a6b91a; color: #fff; }
+.weakness-badge.dark { background: #705746; color: #fff; }
+.weakness-badge.dragon { background: #6f35fc; color: #fff; }
+.weakness-badge.electric { background: #f7d02c; color: #333; }
+.weakness-badge.fairy { background: #d685ad; color: #fff; }
+.weakness-badge.fighting { background: #c22e28; color: #fff; }
+.weakness-badge.fire { background: #f08030; color: #fff; }
+.weakness-badge.flying { background: #a98ff3; color: #fff; }
+.weakness-badge.ghost { background: #705898; color: #fff; }
+.weakness-badge.grass { background: #78c850; color: #fff; }
+.weakness-badge.ground { background: #e0c068; color: #fff; }
+.weakness-badge.ice { background: #98d8d8; color: #333; }
+.weakness-badge.normal { background: #a8a77a; color: #fff; }
+.weakness-badge.poison { background: #a040a0; color: #fff; }
+.weakness-badge.psychic { background: #f85888; color: #fff; }
+.weakness-badge.rock { background: #b8a038; color: #fff; }
+.weakness-badge.steel { background: #b7b7d0; color: #333; }
+.weakness-badge.water { background: #6890f0; color: #fff; }
+

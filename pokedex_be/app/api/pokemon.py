@@ -2,8 +2,9 @@ from fastapi import APIRouter, Depends, HTTPException, Query
 from motor.motor_asyncio import AsyncIOMotorDatabase
 
 from app.db.mongo import get_database
-from app.schemas.pokemon import PokemonListResponse, PokemonOut
+from app.schemas.pokemon import PokemonListResponse, PokemonOut, PokemonDetailsOut
 from app.services.pokemon_service import get_pokemon_by_number, list_pokemon
+from app.services.pokeapi_details import get_pokemon_detailed_info
 
 router = APIRouter(prefix="/pokemon", tags=["pokemon"])
 
@@ -30,3 +31,14 @@ async def find_pokemon(
         raise HTTPException(status_code=404, detail="Pokemon nao encontrado")
 
     return pokemon
+
+
+@router.get("/{number}/details", response_model=PokemonDetailsOut)
+async def find_pokemon_details(
+    number: int,
+    db: AsyncIOMotorDatabase = Depends(get_database),
+) -> dict:
+    try:
+        return await get_pokemon_detailed_info(db, number)
+    except ValueError as e:
+        raise HTTPException(status_code=404, detail=str(e))

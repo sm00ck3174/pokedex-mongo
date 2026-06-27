@@ -1,6 +1,7 @@
 "use client";
 
 import { useMemo, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import { PokemonCard } from "@/components/PokemonCard";
 import type { Pokemon } from "@/lib/api";
@@ -25,6 +26,7 @@ const typeOptions = [
 ];
 
 export function PokedexClient({ pokemon }: { pokemon: Pokemon[] }) {
+  const router = useRouter();
   const [search, setSearch] = useState("");
   const [selectedType, setSelectedType] = useState("all");
 
@@ -78,7 +80,11 @@ export function PokedexClient({ pokemon }: { pokemon: Pokemon[] }) {
 
       <section className="pokemon-grid" aria-label="Lista de Pokemon">
         {filteredPokemon.map((item) => (
-          <PokemonCard key={item.number} pokemon={item} />
+          <PokemonCard
+            key={item.number}
+            pokemon={item}
+            onClick={() => router.push(`/pokemon/${item.number}`)}
+          />
         ))}
       </section>
     </>

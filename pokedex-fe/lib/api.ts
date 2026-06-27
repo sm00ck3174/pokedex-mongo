@@ -23,7 +23,22 @@ export type PokemonListResponse = {
   items: Pokemon[];
 };
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:8000";
+const API_URL = process.env.NEXT_PUBLIC_API_URL ?? "http://127.0.0.1:8000";
+
+export type EvolutionStep = {
+  number: number;
+  name: string;
+  imageUrl: string;
+  types: string[];
+};
+
+export type PokemonDetails = Pokemon & {
+  lore: string;
+  evolutions: EvolutionStep[];
+  weaknesses: string[];
+  shinyImageUrl: string;
+  cryUrl: string;
+};
 
 export async function getPokemon(): Promise<PokemonListResponse> {
   const response = await fetch(`${API_URL}/pokemon?limit=151`, {
@@ -32,6 +47,16 @@ export async function getPokemon(): Promise<PokemonListResponse> {
 
   if (!response.ok) {
     throw new Error("Nao foi possivel carregar a Pokedex.");
+  }
+
+  return response.json();
+}
+
+export async function getPokemonDetails(number: number): Promise<PokemonDetails> {
+  const response = await fetch(`${API_URL}/pokemon/${number}/details`);
+
+  if (!response.ok) {
+    throw new Error("Nao foi possivel carregar os detalhes do Pokemon.");
   }
 
   return response.json();

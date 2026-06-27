@@ -25,6 +25,25 @@ class PokemonOut(BaseModel):
     model_config = ConfigDict(populate_by_name=True)
 
 
+class EvolutionStep(BaseModel):
+    number: int
+    name: str
+    image_url: str = Field(alias="imageUrl")
+    types: list[str]
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
+class PokemonDetailsOut(PokemonOut):
+    lore: str
+    evolutions: list[EvolutionStep]
+    weaknesses: list[str]
+    shiny_image_url: str = Field(alias="shinyImageUrl")
+    cry_url: str = Field(alias="cryUrl")
+
+    model_config = ConfigDict(populate_by_name=True)
+
+
 class PokemonListResponse(BaseModel):
     total: int
     items: list[PokemonOut]
